@@ -4,17 +4,22 @@ namespace GadgetHub.WebAPI.Services;
 
 public class AuthService
 {
-    // Hardcoded users: admin + distributors
-    private readonly List<User> _staticUsers = new()
+    public bool EmailExists(string email)
     {
-        new User { Username = "admin", Password = "admin123", Role = "admin" },
-        new User { Username = "techworld", Password = "123", Role = "distributor" },
-        new User { Username = "electrocom", Password = "123", Role = "distributor" },
-        new User { Username = "gadgetcentral", Password = "123", Role = "distributor" },
-    };
+        return _staticUsers.Any(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)) ||
+               _registeredCustomers.Any(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+    }
 
-    // Dynamically registered customers
-    private readonly List<User> _registeredCustomers = new();
+    private readonly List<User> _staticUsers = new()
+{
+    new User { Username = "admin", Password = "admin123", Role = "admin", Email = "admin@gadgethub.com" },
+    new User { Username = "techworld", Password = "123", Role = "distributor", Email = "tech@gadgethub.com" },
+    new User { Username = "electrocom", Password = "123", Role = "distributor", Email = "electro@gadgethub.com" },
+    new User { Username = "gadgetcentral", Password = "123", Role = "distributor", Email = "gadget@gadgethub.com" },
+};
+
+    private readonly List<User> _registeredCustomers = new(); // ✅ Make sure this is here!
+
 
     public User? Login(string username, string password)
     {
@@ -33,11 +38,15 @@ public class AuthService
 
     public User Register(User user)
     {
-        user.Role = "customer";
+        Console.WriteLine($"[SERVICE] Registering {user.Username} with email: {user.Email}");
+
         user.Id = Guid.NewGuid();
-        _registeredCustomers.Add(user);
+        user.Role = "customer";
+        _registeredCustomers.Add(user); 
+
         return user;
     }
+
 
     public List<User> GetAllCustomers() => _registeredCustomers;
 }

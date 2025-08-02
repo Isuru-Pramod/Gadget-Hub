@@ -16,7 +16,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public IActionResult Login([FromBody] User input)
+    public IActionResult Login([FromBody] LoginRequest input)
     {
         if (string.IsNullOrWhiteSpace(input.Username) || string.IsNullOrWhiteSpace(input.Password))
         {
@@ -38,27 +38,73 @@ public class AuthController : ControllerBase
         });
     }
 
+
+
+
     [HttpPost("register")]
     public IActionResult Register([FromBody] User input)
     {
-        if (string.IsNullOrWhiteSpace(input.Username) || string.IsNullOrWhiteSpace(input.Password))
+        try
         {
-            return BadRequest("Username and password are required.");
+            Console.WriteLine($"[REGISTER] Username: {input.Username}, Email: {input.Email}");
+
+            if (string.IsNullOrWhiteSpace(input.Username) ||
+                string.IsNullOrWhiteSpace(input.Password) ||
+                string.IsNullOrWhiteSpace(input.Email))
+            {
+                Console.WriteLine("Missing fields.");
+                return BadRequest("Username, password, and email are required.");
+            }
+
+            if (!IsValidEmail(input.Email))
+            {
+                Console.WriteLine("Invalid email.");
+                return BadRequest("Invalid email format.");
+            }
+
+            if (_service.UsernameExists(input.Username))
+            {
+                Console.WriteLine("Username exists.");
+                return Conflict("Username already exists.");
+            }
+
+            if (_service.EmailExists(input.Email))
+            {
+                Console.WriteLine("Email exists.");
+                return Conflict("Email already in use.");
+            }
+
+            var user = _service.Register(input);
+            Console.WriteLine($"[REGISTER] Success for {user.Username}");
+
+            return Ok(new
+            {
+                message = "Customer registered successfully",
+                username = user.Username,
+                role = user.Role,
+                userId = user.Id
+            });
         }
-
-        if (_service.UsernameExists(input.Username))
+        catch (Exception ex)
         {
-            return Conflict("Username already exists.");
+            Console.WriteLine($"[ERROR] Registration failed: {ex.Message}");
+            return StatusCode(500, "Server error: " + ex.Message);
         }
-
-        var user = _service.Register(input);
-
-        return Ok(new
-        {
-            message = "Customer registered successfully",
-            username = user.Username,
-            role = user.Role,
-            userId = user.Id
-        });
     }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+
+
 }
