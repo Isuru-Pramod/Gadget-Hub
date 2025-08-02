@@ -2,8 +2,9 @@
 
 public class User
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
     public string Username { get; set; }
-    public string Password { get; set; } // NOTE: In real apps, hash this!
-    public string Role { get; set; } // "admin", "distributor"
+    public string Password { get; set; }
+    public string Role { get; set; }
+    public string? FullName { get; set; }
 }

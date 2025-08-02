@@ -6,7 +6,7 @@ public class QuotationStore
 {
     private readonly List<StoredQuotation> _store = new();
 
-    public void CreateRequests(List<ProductOrder> orders, List<string> distributors)
+    public void CreateRequests(List<ProductOrderDto> orders, List<string> distributors)
     {
         foreach (var order in orders)
         {
@@ -16,7 +16,7 @@ public class QuotationStore
                 {
                     Distributor = distributor,
                     ProductId = order.ProductId,
-                    QuantityRequested = order.Quantity,
+                    QuantityRequested = order.QuantityRequested,
                     Status = "Pending"
                 });
             }
