@@ -6,13 +6,11 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 
-// Connect to SQL Server
-
 
 builder.Services.AddScoped<ProductService>(); // Change from AddSingleton to Scoped
 builder.Services.AddSingleton<CustomerService>();
-builder.Services.AddSingleton<QuotationStore>();
-builder.Services.AddSingleton<OrderService>();
+builder.Services.AddScoped<QuotationStore>();
+builder.Services.AddScoped<OrderService>();
 builder.Services.AddSingleton<NotificationService>();
 
 builder.Services.AddScoped<AuthService>();

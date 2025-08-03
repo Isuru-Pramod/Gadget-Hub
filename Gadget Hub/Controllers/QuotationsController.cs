@@ -17,16 +17,17 @@ public class QuotationsController : ControllerBase
 
     // Called by frontend when customer places an order
     [HttpPost("request")]
-    public IActionResult RequestQuotations([FromBody] QuotationRequestDto request)
+    public IActionResult RequestQuotations([FromBody] QuotationRequest request)
     {
-        if (request.ProductOrders == null || request.Distributors == null)
+        if (string.IsNullOrWhiteSpace(request.CustomerUsername))
         {
-            return BadRequest("Missing product orders or distributor list.");
+            return BadRequest("Customer username is required.");
         }
 
-        _store.CreateRequests(request.ProductOrders, request.Distributors);
+        _store.CreateRequests(request.ProductOrders, request.Distributors, request.CustomerUsername);
         return Ok("Quotation requests created. Awaiting distributor responses.");
     }
+
 
     // Called manually by distributor (simulate via Swagger)
     [HttpPost("respond")]

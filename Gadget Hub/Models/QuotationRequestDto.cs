@@ -4,6 +4,7 @@ public class QuotationRequestDto
 {
     public List<ProductOrderDto> ProductOrders { get; set; }
     public List<string> Distributors { get; set; }
+
 }
 
 public class ProductOrderDto
