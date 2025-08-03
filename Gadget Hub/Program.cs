@@ -14,7 +14,8 @@ builder.Services.AddSingleton<CustomerService>();
 builder.Services.AddSingleton<QuotationStore>();
 builder.Services.AddSingleton<OrderService>();
 builder.Services.AddSingleton<NotificationService>();
-builder.Services.AddSingleton<AuthService>();
+
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
