@@ -1,5 +1,6 @@
 ﻿using GadgetHub.WebAPI.Data;
 using GadgetHub.WebAPI.Models;
+using GadgetHub.WebAPI.Models.Dtos;
 
 public class QuotationStore
 {
@@ -33,21 +34,91 @@ public class QuotationStore
         _db.SaveChanges();
     }
 
-    public void AddResponse(QuotationResponse response)
+    public bool AddResponse(QuotationResponse response)
     {
         var quotation = _db.Quotations.FirstOrDefault(q =>
-            q.Distributor.Equals(response.Distributor, StringComparison.OrdinalIgnoreCase)
-            && q.ProductId == response.ProductId);
+            q.Distributor.ToLower() == response.Distributor.ToLower()
+            && q.ProductId == response.ProductId
+            && q.Status == "Pending");
 
-        if (quotation != null)
+        if (quotation == null) return false;
+
+        quotation.PricePerUnit = response.PricePerUnit;
+        quotation.AvailableUnits = response.AvailableUnits;
+        quotation.EstimatedDeliveryDays = response.EstimatedDeliveryDays;
+        quotation.Status = "Received";
+        _db.SaveChanges();
+
+        return true;
+    }
+
+    public bool AddBatchResponses(BulkQuotationResponse batch)
+    {
+        var updatedAny = false;
+
+        foreach (var response in batch.Responses)
         {
-            quotation.PricePerUnit = response.PricePerUnit;
-            quotation.AvailableUnits = response.AvailableUnits;
-            quotation.EstimatedDeliveryDays = response.EstimatedDeliveryDays;
-            quotation.Status = "Received";
+            var quotation = _db.Quotations.FirstOrDefault(q =>
+                q.Distributor == batch.Distributor &&
+                q.CustomerUsername == batch.CustomerUsername &&
+                q.ProductId == response.ProductId &&
+                q.Status == "Pending");
+
+            if (quotation != null)
+            {
+                quotation.PricePerUnit = response.PricePerUnit;
+                quotation.AvailableUnits = response.AvailableUnits;
+                quotation.EstimatedDeliveryDays = response.EstimatedDeliveryDays;
+                quotation.Status = "Received";
+                updatedAny = true;
+            }
+        }
+
+        if (updatedAny)
+        {
             _db.SaveChanges();
         }
+
+        return updatedAny;
     }
+
+    public bool HandleBulkResponse(BulkQuotationResponse bulk)
+    {
+        bool allFound = true;
+
+        foreach (var item in bulk.Responses)
+        {
+            var quote = _db.Quotations.FirstOrDefault(q =>
+                q.Distributor == bulk.Distributor &&
+                q.CustomerUsername == bulk.CustomerUsername &&
+                q.ProductId == item.ProductId &&
+                q.Status == "Pending");
+
+            if (quote == null)
+            {
+                allFound = false;
+                continue;
+            }
+
+            if (item.IsRejected)
+            {
+                quote.Status = "Rejected";
+            }
+            else
+            {
+                quote.PricePerUnit = item.PricePerUnit;
+                quote.AvailableUnits = item.AvailableUnits;
+                quote.EstimatedDeliveryDays = item.EstimatedDeliveryDays;
+                quote.Status = "Received";
+            }
+        }
+
+        _db.SaveChanges();
+        return allFound;
+    }
+
+
+
 
     public List<StoredQuotation> GetQuotationsByProduct(string productId)
     {
