@@ -1,4 +1,8 @@
-﻿using GadgetHub.WebAPI.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using GadgetHub.WebAPI.Models;
 using GadgetHub.WebAPI.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +11,6 @@ namespace GadgetHub.WebAPI.Services;
 public class AuthService
 {
     private readonly AppDbContext _context;
-
     private readonly List<User> _staticUsers = new()
     {
         new User { Username = "admin", Password = "admin123", Role = "admin", Email = "admin@gadgethub.com" },
@@ -21,42 +24,47 @@ public class AuthService
         _context = context;
     }
 
-    public bool EmailExists(string email)
+    public async Task<bool> EmailExistsAsync(string email)
     {
-        return _staticUsers.Any(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)) ||
-               _context.Users.Any(u => u.Email.ToLower() == email.ToLower());
+        bool staticExists = _staticUsers.Any(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        bool dbExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
+        return staticExists || dbExists;
     }
 
-    public bool UsernameExists(string username)
+    public async Task<bool> UsernameExistsAsync(string username)
     {
-        return _staticUsers.Any(u => u.Username.Equals(username, StringComparison.OrdinalIgnoreCase)) ||
-               _context.Users.Any(u => u.Username.ToLower() == username.ToLower());
+        bool staticExists = _staticUsers.Any(u => u.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        bool dbExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
+        return staticExists || dbExists;
     }
 
-    public User? Login(string username, string password)
+    public async Task<User?> LoginAsync(string username, string password)
     {
         var staticUser = _staticUsers.FirstOrDefault(u =>
-            u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) && u.Password == password);
+            u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) &&
+            u.Password == password);
 
-        if (staticUser != null) return staticUser;
+        if (staticUser != null)
+            return staticUser;
 
-        return _context.Users.FirstOrDefault(u =>
-            u.Username.ToLower() == username.ToLower() && u.Password == password);
+        return await _context.Users.FirstOrDefaultAsync(u =>
+            u.Username.ToLower() == username.ToLower() &&
+            u.Password == password);
     }
 
-    public User Register(User user)
+    public async Task<User> RegisterAsync(User user)
     {
         user.Id = Guid.NewGuid();
         user.Role = "customer";
 
         _context.Users.Add(user);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         return user;
     }
 
-    public List<User> GetAllCustomers()
+    public async Task<List<User>> GetAllCustomersAsync()
     {
-        return _context.Users.ToList();
+        return await _context.Users.ToListAsync();
     }
 }

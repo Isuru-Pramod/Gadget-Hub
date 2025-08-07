@@ -1,6 +1,7 @@
 ﻿using GadgetHub.WebAPI.Models;
 using GadgetHub.WebAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace GadgetHub.WebAPI.Controllers;
 
@@ -17,21 +18,20 @@ public class ProductsController : ControllerBase
 
     // Get all products
     [HttpGet]
-    public IActionResult GetAll() => Ok(_service.GetAll());
+    public async Task<IActionResult> GetAll() => Ok(await _service.GetAll());
 
     // Get a product by ID
     [HttpGet("{id}")]
-    public IActionResult Get(string id)
+    public async Task<IActionResult> Get(string id)
     {
-        var result = _service.GetById(id);
+        var result = await _service.GetById(id);
         return result == null ? NotFound("Product not found.") : Ok(result);
     }
 
-    // Get image for a product
     [HttpGet("{id}/image")]
-    public IActionResult GetImage(string id)
+    public async Task<IActionResult> GetImage(string id)
     {
-        var product = _service.GetById(id);
+        var product = await _service.GetById(id);
         if (product == null || product.ImageData == null)
             return NotFound("Image not found");
 
@@ -60,23 +60,23 @@ public class ProductsController : ControllerBase
             product.ImageType = dto.Image.ContentType;
         }
 
-        var created = _service.Add(product);
+        var created = await _service.Add(product);
         return Ok(created);
     }
 
     // Update a product (excluding image)
     [HttpPut("{id}")]
-    public IActionResult Update(string id, [FromBody] Product updated)
+    public async Task<IActionResult> Update(string id, [FromBody] Product updated)
     {
-        var result = _service.Update(id, updated);
+        var result = await _service.Update(id, updated);
         return result == null ? NotFound("Product not found.") : Ok(result);
     }
 
     // Delete a product
     [HttpDelete("{id}")]
-    public IActionResult Delete(string id)
+    public async Task<IActionResult> Delete(string id)
     {
-        var result = _service.Delete(id);
+        var result = await _service.Delete(id);
         return result ? Ok("Product deleted.") : NotFound("Product not found.");
     }
 }

@@ -1,8 +1,15 @@
-﻿namespace GadgetHub.WebAPI.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace GadgetHub.WebAPI.Models;
 
 public class Notification
 {
-    public string Email { get; set; }
-    public string Subject { get; set; }
-    public string Message { get; set; }
+    [Required, EmailAddress]
+    public string Email { get; set; } = null!;
+
+    [Required]
+    public string Subject { get; set; } = null!;
+
+    [Required]
+    public string Message { get; set; } = null!;
 }

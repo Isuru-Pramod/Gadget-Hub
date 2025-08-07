@@ -2,13 +2,12 @@
 
 public class QuotationRequestDto
 {
-    public List<ProductOrderDto> ProductOrders { get; set; }
-    public List<string> Distributors { get; set; }
-
+    public required List<ProductOrderDto> ProductOrders { get; set; } = new();
+    public required List<string> Distributors { get; set; } = new();
 }
 
 public class ProductOrderDto
 {
-    public string ProductId { get; set; }
+    public required string ProductId { get; set; }
     public int QuantityRequested { get; set; }
 }

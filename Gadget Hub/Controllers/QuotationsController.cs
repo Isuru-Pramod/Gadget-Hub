@@ -1,86 +1,107 @@
 ﻿using GadgetHub.WebAPI.Models;
-using GadgetHub.WebAPI.Models.Dtos;
 using GadgetHub.WebAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using GadgetHub.WebAPI.Models.Dtos;
 
-namespace GadgetHub.WebAPI.Controllers
+namespace GadgetHub.WebAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class QuotationsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class QuotationsController : ControllerBase
+    private readonly QuotationStore _store;
+    private readonly OrderService _orderService;
+
+    public QuotationsController(QuotationStore store, OrderService orderService)
     {
-        private readonly QuotationStore _store;
+        _store = store;
+        _orderService = orderService;
+    }
 
-        public QuotationsController(QuotationStore store)
+    [HttpGet("customer-orders")]
+    public async Task<IActionResult> GetCustomerOrders([FromQuery] string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
         {
-            _store = store;
+            return BadRequest("Username is required.");
         }
 
-        // Called by frontend when customer places an order
-        [HttpPost("request")]
-        public IActionResult RequestQuotations([FromBody] QuotationRequest request)
+        var orders = await _orderService.GetCustomerOrders(username);
+        return Ok(orders);
+    }
+
+    [HttpPost("request")]
+    public IActionResult RequestQuotations([FromBody] QuotationRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.CustomerUsername))
         {
-            if (string.IsNullOrWhiteSpace(request.CustomerUsername))
-            {
-                return BadRequest("Customer username is required.");
-            }
-
-            if (request.ProductOrders == null || request.ProductOrders.Count == 0)
-            {
-                return BadRequest("No product orders found.");
-            }
-
-            _store.CreateRequests(request.ProductOrders, request.Distributors, request.CustomerUsername);
-            return Ok("Quotation requests created. Awaiting distributor responses.");
+            return BadRequest("Customer username is required.");
         }
 
-        // Called by distributors to respond to a quotation
-        [HttpPost("respond")]
-        public IActionResult RespondToQuotation([FromBody] QuotationResponse response)
+        if (request.ProductOrders == null || request.ProductOrders.Count == 0)
         {
-            bool success = _store.AddResponse(response);
-
-            if (!success)
-            {
-                return NotFound("Pending quotation not found for the specified distributor and product.");
-            }
-
-            return Ok("Quotation response saved successfully.");
+            return BadRequest("No product orders found.");
         }
 
-        [HttpPost("respond-batch")]
-        public IActionResult RespondBatch([FromBody] BulkQuotationResponse bulk)
+        _store.CreateRequests(request.ProductOrders, request.Distributors, request.CustomerUsername);
+        return Ok("Quotation requests created. Awaiting distributor responses.");
+    }
+
+    [HttpPost("respond")]
+    public async Task<IActionResult> RespondToQuotation([FromBody] QuotationResponse response)
+    {
+        bool success = _store.AddResponse(response);
+        if (!success)
         {
-            if (string.IsNullOrWhiteSpace(bulk.Distributor) || string.IsNullOrWhiteSpace(bulk.CustomerUsername))
-            {
-                return BadRequest("Distributor and CustomerUsername are required.");
-            }
-
-            var success = _store.HandleBulkResponse(bulk);
-
-            return success
-                ? Ok("Responses processed successfully.")
-                : NotFound("Some quotations were not found or already processed.");
+            return NotFound("Pending quotation not found for the specified distributor and product.");
         }
 
+        await _orderService.ProcessConfirmedOrders();
+        return Ok("Quotation response saved successfully.");
+    }
 
-
-        // For viewing quotation status per product (used by customer or admin)
-        [HttpGet("status")]
-        public IActionResult GetStatus([FromQuery] string productId)
+    [HttpPost("respond-batch")]
+    public async Task<IActionResult> RespondBatch([FromBody] BulkQuotationResponse bulk)
+    {
+        if (string.IsNullOrWhiteSpace(bulk.Distributor) ||
+            string.IsNullOrWhiteSpace(bulk.CustomerUsername))
         {
-            if (string.IsNullOrWhiteSpace(productId))
-                return BadRequest("Product ID is required.");
-
-            var result = _store.GetQuotationsByProduct(productId);
-            return Ok(result);
+            return BadRequest("Distributor and CustomerUsername are required.");
         }
 
-        // View all quotations (for admin/debug)
-        [HttpGet("all")]
-        public IActionResult GetAll()
+        var success = _store.HandleBulkResponse(bulk);
+
+        if (!success)
         {
-            return Ok(_store.GetAll());
+            return NotFound("Some quotations were not found or already processed.");
         }
+
+        await _orderService.ProcessCompletedQuotations(bulk.CustomerUsername);
+        return Ok("Responses processed successfully.");
+    }
+
+    [HttpGet("status")]
+    public IActionResult GetStatus([FromQuery] string productId)
+    {
+        if (string.IsNullOrWhiteSpace(productId))
+            return BadRequest("Product ID is required.");
+
+        var result = _store.GetQuotationsByProduct(productId);
+        return Ok(result);
+    }
+
+    [HttpGet("all")]
+    public IActionResult GetAll()
+    {
+        return Ok(_store.GetAll());
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult DeleteQuotation(int id)
+    {
+        bool success = _store.DeleteQuotation(id);
+        return success
+            ? Ok("Quotation deleted successfully")
+            : NotFound("Quotation not found");
     }
 }

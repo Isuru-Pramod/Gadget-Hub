@@ -1,6 +1,8 @@
-﻿using GadgetHub.WebAPI.Data;
+﻿using GadgetHub.WebAPI.Models.Dtos;
+using GadgetHub.WebAPI.Data;
 using GadgetHub.WebAPI.Models;
-using GadgetHub.WebAPI.Models.Dtos;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 public class QuotationStore
 {
@@ -117,13 +119,39 @@ public class QuotationStore
         return allFound;
     }
 
-
-
-
     public List<StoredQuotation> GetQuotationsByProduct(string productId)
     {
         return _db.Quotations.Where(q => q.ProductId == productId).ToList();
     }
 
     public List<StoredQuotation> GetAll() => _db.Quotations.ToList();
+
+    public bool DeleteQuotation(int id)
+    {
+        var quotation = _db.Quotations.FirstOrDefault(q => q.Id == id);
+        if (quotation == null) return false;
+
+        _db.Quotations.Remove(quotation);
+        _db.SaveChanges();
+        return true;
+    }
+
+    public async Task<List<StoredQuotation>> GetQuotationsByCustomer(string customerUsername)
+    {
+        return await _db.Quotations
+            .Where(q => q.CustomerUsername == customerUsername)
+            .ToListAsync();
+    }
+
+    public async Task<List<StoredQuotation>> GetQuotationsByProductAndCustomer(string productId, string customerUsername)
+    {
+        return await _db.Quotations
+            .Where(q => q.ProductId == productId && q.CustomerUsername == customerUsername)
+            .ToListAsync();
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _db.SaveChangesAsync();
+    }
 }

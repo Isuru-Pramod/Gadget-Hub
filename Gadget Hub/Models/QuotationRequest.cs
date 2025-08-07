@@ -1,8 +1,15 @@
-﻿namespace GadgetHub.WebAPI.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace GadgetHub.WebAPI.Models;
 
 public class QuotationRequest
 {
-    public List<ProductOrder> ProductOrders { get; set; }
-    public List<string> Distributors { get; set; }
-    public string CustomerUsername { get; set; }
+    [Required, MinLength(1)]
+    public List<ProductOrder> ProductOrders { get; set; } = new();
+
+    [Required, MinLength(1)]
+    public List<string> Distributors { get; set; } = new();
+
+    [Required]
+    public string CustomerUsername { get; set; } = null!;
 }

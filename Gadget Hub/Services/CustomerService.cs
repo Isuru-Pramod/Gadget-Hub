@@ -12,13 +12,16 @@ public class CustomerService
         return customer;
     }
 
-    public Customer Login(string email, string password)
+    public Customer? Login(string email, string password)
     {
-        return _customers.FirstOrDefault(c => c.Email == email && c.Password == password);
+        return _customers.FirstOrDefault(c =>
+            c.Email == email &&
+            c.Password == password);
     }
 
-    public Customer GetById(Guid id)
+    public Customer? GetById(Guid id)
     {
         return _customers.FirstOrDefault(c => c.Id == id);
     }
+
 }

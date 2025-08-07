@@ -1,5 +1,6 @@
 ﻿using GadgetHub.WebAPI.Models;
 using GadgetHub.WebAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace GadgetHub.WebAPI.Services;
 
@@ -12,39 +13,46 @@ public class ProductService
         _context = context;
     }
 
-    public List<Product> GetAll() => _context.Products.ToList();
+    public async Task<List<Product>> GetAll() => await _context.Products.ToListAsync();
 
-    public Product Add(Product product)
+    public async Task<Product> Add(Product product)
     {
         _context.Products.Add(product);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return product;
     }
 
-    public Product GetById(string id)
+    public async Task<Product?> GetById(string id)
     {
-        return _context.Products.FirstOrDefault(p => p.Id == id);
+        return await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public bool Delete(string id)
+    public async Task<Product?> Update(string id, Product updated)
     {
-        var product = GetById(id);
+        var product = await GetById(id);
+        if (product == null) return null;
+
+        product.Name = updated.Name ?? product.Name;
+        product.Description = updated.Description ?? product.Description;
+        product.Category = updated.Category ?? product.Category;
+
+        if (updated.ImageData != null)
+        {
+            product.ImageData = updated.ImageData;
+            product.ImageType = updated.ImageType;
+        }
+
+        await _context.SaveChangesAsync();
+        return product;
+    }
+
+    public async Task<bool> Delete(string id)
+    {
+        var product = await GetById(id);
         if (product == null) return false;
 
         _context.Products.Remove(product);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return true;
-    }
-
-    public Product Update(string id, Product updated)
-    {
-        var product = GetById(id);
-        if (product == null) return null;
-
-        product.Name = updated.Name;
-        product.Description = updated.Description;
-        product.Category = updated.Category;
-        _context.SaveChanges();
-        return product;
     }
 }
