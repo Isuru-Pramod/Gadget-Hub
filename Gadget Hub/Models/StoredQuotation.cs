@@ -32,9 +32,4 @@ public class StoredQuotation
 
     [Required]
     public string CustomerUsername { get; set; } = null!;
-
-    public Guid? OrderId { get; set; }
-
-    [ForeignKey("OrderId")]
-    public Order? Order { get; set; }
 }

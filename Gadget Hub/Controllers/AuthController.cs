@@ -1,6 +1,9 @@
-﻿using GadgetHub.WebAPI.Models;
+﻿using GadgetHub.WebAPI.Data;
+using GadgetHub.WebAPI.Models;
+using GadgetHub.WebAPI.Models.Dtos;
 using GadgetHub.WebAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace GadgetHub.WebAPI.Controllers;
@@ -11,11 +14,49 @@ public class AuthController : ControllerBase
 {
     private readonly AuthService _service;
     private readonly ILogger<AuthController> _logger;
+    private readonly AppDbContext _context;
 
-    public AuthController(AuthService service, ILogger<AuthController> logger)
+    public AuthController(AppDbContext context, AuthService service, ILogger<AuthController> logger)
     {
         _service = service;
         _logger = logger;
+        _context = context;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
+    {
+        try
+        {
+            var users = await _context.Users
+                .OrderBy(u => u.Username)
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    Role = u.Role,
+                    FullName = u.FullName,
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while fetching users");
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+        return NoContent();
     }
 
     [HttpPost("login")]
@@ -45,9 +86,9 @@ public class AuthController : ControllerBase
                 userId = user.Id
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Error during login for username: {Username}", input.Username);
+            _logger.LogError("Error during login for username: {Username}", input.Username);
             return StatusCode(500, "An error occurred while processing your request.");
         }
     }

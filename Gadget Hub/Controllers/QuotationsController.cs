@@ -1,7 +1,11 @@
-﻿using GadgetHub.WebAPI.Models;
+﻿using GadgetHub.WebAPI.Data;
+using GadgetHub.WebAPI.Models;
+using GadgetHub.WebAPI.Models.Dtos;
 using GadgetHub.WebAPI.Services;
 using Microsoft.AspNetCore.Mvc;
-using GadgetHub.WebAPI.Models.Dtos;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
 
 namespace GadgetHub.WebAPI.Controllers;
 
@@ -11,9 +15,17 @@ public class QuotationsController : ControllerBase
 {
     private readonly QuotationStore _store;
     private readonly OrderService _orderService;
+    private readonly AppDbContext _context;
+    private readonly ILogger<QuotationsController> _logger;
 
-    public QuotationsController(QuotationStore store, OrderService orderService)
+    public QuotationsController(
+        AppDbContext context,
+        ILogger<QuotationsController> logger,
+        QuotationStore store,
+        OrderService orderService)
     {
+        _context = context;
+        _logger = logger;
         _store = store;
         _orderService = orderService;
     }
@@ -47,18 +59,47 @@ public class QuotationsController : ControllerBase
         return Ok("Quotation requests created. Awaiting distributor responses.");
     }
 
-    [HttpPost("respond")]
-    public async Task<IActionResult> RespondToQuotation([FromBody] QuotationResponse response)
+    [HttpGet("all-quotations")]
+    public async Task<IActionResult> GetAllQuotations()
     {
-        bool success = _store.AddResponse(response);
-        if (!success)
+        try
         {
-            return NotFound("Pending quotation not found for the specified distributor and product.");
-        }
+            var quotations = await _context.Quotations
+                .OrderByDescending(q => q.Id)
+                .ToListAsync();
 
-        await _orderService.ProcessConfirmedOrders();
-        return Ok("Quotation response saved successfully.");
+            return Ok(quotations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching all quotations");
+            return StatusCode(500, "An error occurred while fetching quotations");
+        }
     }
+
+    [HttpDelete("delete-quotation/{id}")]
+    public async Task<IActionResult> DeleteQuotation(int id)
+    {
+        try
+        {
+            var quotation = await _context.Quotations.FindAsync(id);
+            if (quotation == null)
+            {
+                return NotFound($"Quotation with ID {id} not found");
+            }
+
+            _context.Quotations.Remove(quotation);
+            await _context.SaveChangesAsync();
+
+            return Ok($"Quotation with ID {id} deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting quotation with ID {Id}", id);
+            return StatusCode(500, "An error occurred while deleting the quotation");
+        }
+    }
+
 
     [HttpPost("respond-batch")]
     public async Task<IActionResult> RespondBatch([FromBody] BulkQuotationResponse bulk)
@@ -96,12 +137,5 @@ public class QuotationsController : ControllerBase
         return Ok(_store.GetAll());
     }
 
-    [HttpDelete("{id}")]
-    public IActionResult DeleteQuotation(int id)
-    {
-        bool success = _store.DeleteQuotation(id);
-        return success
-            ? Ok("Quotation deleted successfully")
-            : NotFound("Quotation not found");
-    }
+
 }

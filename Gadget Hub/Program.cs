@@ -7,10 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddScoped<ProductService>();
-builder.Services.AddSingleton<CustomerService>();
 builder.Services.AddScoped<QuotationStore>();
 builder.Services.AddScoped<OrderService>();
-builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddControllers();

@@ -49,8 +49,8 @@ public class QuotationStore
         quotation.AvailableUnits = response.AvailableUnits;
         quotation.EstimatedDeliveryDays = response.EstimatedDeliveryDays;
         quotation.Status = "Received";
-        _db.SaveChanges();
 
+        _db.SaveChanges(); // This saves to database
         return true;
     }
 

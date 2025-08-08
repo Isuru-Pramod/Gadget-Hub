@@ -22,24 +22,6 @@ namespace Gadget_Hub.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("GadgetHub.WebAPI.Models.Order", b =>
-                {
-                    b.Property<Guid>("OrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("OrderId");
-
-                    b.ToTable("Orders");
-                });
-
             modelBuilder.Entity("GadgetHub.WebAPI.Models.OrderStatus", b =>
                 {
                     b.Property<int>("Id")
@@ -118,9 +100,6 @@ namespace Gadget_Hub.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("ProductId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -129,8 +108,6 @@ namespace Gadget_Hub.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
 
                     b.ToTable("ProductOrders");
                 });
@@ -157,9 +134,6 @@ namespace Gadget_Hub.Migrations
                     b.Property<int?>("EstimatedDeliveryDays")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("OrderId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal?>("PricePerUnit")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -176,8 +150,6 @@ namespace Gadget_Hub.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
 
                     b.ToTable("Quotations");
                 });
@@ -210,31 +182,6 @@ namespace Gadget_Hub.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("GadgetHub.WebAPI.Models.ProductOrder", b =>
-                {
-                    b.HasOne("GadgetHub.WebAPI.Models.Order", "Order")
-                        .WithMany("Items")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("GadgetHub.WebAPI.Models.StoredQuotation", b =>
-                {
-                    b.HasOne("GadgetHub.WebAPI.Models.Order", null)
-                        .WithMany("SelectedQuotations")
-                        .HasForeignKey("OrderId");
-                });
-
-            modelBuilder.Entity("GadgetHub.WebAPI.Models.Order", b =>
-                {
-                    b.Navigation("Items");
-
-                    b.Navigation("SelectedQuotations");
                 });
 #pragma warning restore 612, 618
         }

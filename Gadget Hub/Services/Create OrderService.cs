@@ -36,7 +36,7 @@ public class OrderProcessingService
                 SelectedDistributor = bestQuotation.Distributor,
                 PricePerUnit = bestQuotation.PricePerUnit ?? 0,
                 EstimatedDeliveryDays = bestQuotation.EstimatedDeliveryDays ?? 0,
-                Status = "Confirmed"
+                Status = "Confirmed3"
             };
 
             _context.OrderStatuses.Add(orderStatus);

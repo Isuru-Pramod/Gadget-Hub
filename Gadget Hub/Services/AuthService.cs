@@ -65,6 +65,8 @@ public class AuthService
 
     public async Task<List<User>> GetAllCustomersAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users
+            .Where(u => u.Role == "customer")
+            .ToListAsync();
     }
 }
